@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kamia 報價計算器（未稅）</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --bd:#e5e7eb; --tx:#0f172a; --mut:#64748b;
+      --shadow: 0 12px 40px rgba(2,6,23,.08);
+      --shadow2: 0 6px 18px rgba(2,6,23,.06);
+      --r:22px; --focus: rgba(99,102,241,.18);
+      --warn:#92400e; --warnbg:#fffbeb; --warnbd:#fcd34d;
+      --ok:#065f46; --okbg:#ecfdf5; --okbd:#6ee7b7;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,"PingFang TC","Noto Sans TC",Arial;
+      background:
+        radial-gradient(1200px 600px at 20% -10%, #eaf0ff 0%, rgba(234,240,255,0) 55%),
+        radial-gradient(900px 500px at 90% 0%, #e9fff5 0%, rgba(233,255,245,0) 55%),
+        var(--bg);
+      color:var(--tx);
+    }
+    .wrap{ max-width: 1020px; margin: 28px auto; padding: 0 18px 40px; }
+    .top{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom: 14px; }
+    h1{ margin:0; font-size: 26px; letter-spacing:.2px; }
+    .sub{ color:var(--mut); font-size:14px; line-height:1.55; margin-top:6px; }
+    .btn{
+      border:1px solid var(--bd);
+      background: rgba(255,255,255,.7);
+      backdrop-filter: blur(8px);
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-size:14px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      font-weight: 900;
+    }
+    .btn:hover{ background:#fff; }
+    .btn.primary{
+      border-color: rgba(79,70,229,.25);
+      background: rgba(79,70,229,.08);
+    }
+    .btn.primary:hover{ background: rgba(79,70,229,.12); }
+    .card{
+      background: var(--card);
+      border: 1px solid rgba(229,231,235,.9);
+      border-radius: var(--r);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+
+    label{ display:block; font-size: 13px; color: #334155; margin: 0 0 8px; }
+    select, input{
+      width:100%;
+      border: 1px solid #d1d5db;
+      border-radius: 18px;
+      padding: 16px 16px;
+      font-size: 20px;
+      font-weight: 900;
+      outline: none;
+      background:#fff;
+      box-shadow: 0 1px 0 rgba(2,6,23,.02);
+    }
+    input::placeholder{ color:#94a3b8; font-weight:800; }
+    select:focus, input:focus{ border-color:#94a3b8; box-shadow: 0 0 0 6px var(--focus); }
+
+    .modeBar{
+      margin-top: 12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .toggle{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      padding: 12px 14px;
+      border: 1px solid rgba(229,231,235,.95);
+      border-radius: 18px;
+      background: #fbfbfd;
+    }
+    .toggle input[type="checkbox"]{ width:22px; height:22px; margin:0; accent-color:#4f46e5; }
+    .toggle .title{ font-weight: 1000; font-size: 15px; letter-spacing:.2px; }
+    .toggle .desc{ color: var(--mut); font-size: 12px; line-height:1.4; }
+
+    .resultCard{ margin-top: 14px; display:grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
+    @media (max-width: 860px){ .resultCard{ grid-template-columns: 1fr; } }
+    .kpi{
+      background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.92) 100%);
+      border: 1px solid rgba(229,231,235,.9);
+      border-radius: var(--r);
+      padding: 18px;
+      box-shadow: var(--shadow2);
+    }
+    .kpi .t{ color: var(--mut); font-size: 13px; margin-bottom: 10px; }
+    .kpi .v{ font-size: 46px; font-weight: 1000; letter-spacing: .3px; line-height: 1.05; }
+    .kpi .unit{ font-size: 18px; font-weight: 1000; color:#334155; margin-left: 6px; }
+    .hint{ color: var(--mut); font-size: 12px; margin-top: 10px; line-height:1.6; }
+
+    .warnBox{
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--warnbd);
+      background: var(--warnbg);
+      color: var(--warn);
+      font-weight: 1000;
+      display:none;
+      line-height:1.5;
+    }
+    .warnBox small{ display:block; font-weight: 800; color: rgba(146,64,14,.85); margin-top:6px; }
+
+    .okBox{
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--okbd);
+      background: var(--okbg);
+      color: var(--ok);
+      font-weight: 1000;
+      display:none;
+      line-height:1.5;
+    }
+    .okBox small{ display:block; font-weight: 800; color: rgba(6,95,70,.85); margin-top:6px; }
+
+    .splitCard{
+      margin-top: 12px;
+      display:none;
+      border: 1px solid rgba(229,231,235,.9);
+      border-radius: 18px;
+      background:#fff;
+      padding: 14px;
+      box-shadow: var(--shadow2);
+    }
+    .splitCard .title{
+      font-weight: 1000;
+      margin-bottom: 10px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .splitTable{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(229,231,235,.9);
+    }
+    .splitTable th, .splitTable td{
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(229,231,235,.9);
+      text-align:left;
+      font-size: 14px;
+    }
+    .splitTable th{ background:#f8fafc; color:#334155; font-weight: 1000; }
+    .splitTable tr:last-child td{ border-bottom:none; }
+    .pill{
+      display:inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.35);
+      background:#f8fafc;
+      color:#0f172a;
+      font-weight: 1000;
+      font-size: 12px;
+    }
+
+    .oneLine{
+      background:#0b1220;
+      color:#f8fafc;
+      border-radius: var(--r);
+      padding: 18px;
+      box-shadow: var(--shadow2);
+      border: 1px solid rgba(15,23,42,.25);
+      position: relative;
+      overflow:hidden;
+    }
+    .oneLine:before{
+      content:"";
+      position:absolute; inset:-40px -80px auto auto;
+      width:240px; height:240px;
+      background: radial-gradient(circle at 30% 30%, rgba(99,102,241,.35), rgba(34,197,94,.25), rgba(0,0,0,0) 70%);
+      transform: rotate(18deg);
+    }
+    .oneLine .t{ position:relative; font-size: 13px; color: rgba(248,250,252,.7); margin-bottom: 10px; }
+    .oneLine .txt{ position:relative; font-size: 18px; font-weight: 1000; line-height: 1.5; }
+    .actions{ margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap; position:relative; }
+    .copy{
+      border: 1px solid rgba(248,250,252,.22);
+      background: rgba(255,255,255,.06);
+      color:#f8fafc;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 1000;
+      cursor:pointer;
+    }
+    .copy:hover{ background: rgba(255,255,255,.12); }
+    .toast{ display:none; margin-top:10px; color: rgba(248,250,252,.8); font-size: 12px; position:relative; }
+
+    .hide{ display:none !important; }
+    .foot{ margin-top: 10px; color: var(--mut); font-size: 12px; line-height: 1.6; }
+    .mono{ font-family: ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+    /* Add-ons / Quote panel */
+    .sectionTitle{
+      margin: 16px 0 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      font-weight:1000;
+    }
+    .miniBtn{
+      border:1px solid var(--bd);
+      background:#fff;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-size:13px;
+      cursor:pointer;
+      font-weight: 900;
+      box-shadow: var(--shadow2);
+    }
+    .miniBtn:hover{ background:#f8fafc; }
+    .addonTable{
+      width:100%;
+      border-collapse:collapse;
+      border:1px solid rgba(229,231,235,.9);
+      border-radius: 16px;
+      overflow:hidden;
+      box-shadow: var(--shadow2);
+    }
+    .addonTable th,.addonTable td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(229,231,235,.9);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    .addonTable th{ background:#f8fafc; color:#334155; font-weight:1000; }
+    .addonTable tr:last-child td{ border-bottom:none; }
+    .addonTable input,.addonTable select{
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 14px;
+      font-weight: 900;
+    }
+    .addonRowBtn{
+      border:1px solid rgba(239,68,68,.25);
+      background: rgba(239,68,68,.08);
+      color:#7f1d1d;
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor:pointer;
+      font-weight: 1000;
+    }
+    .addonRowBtn:hover{ background: rgba(239,68,68,.12); }
+
+    .quotePanel{
+      margin-top:14px;
+      border:1px solid rgba(229,231,235,.9);
+      border-radius: var(--r);
+      background:#fff;
+      padding:14px;
+      box-shadow: var(--shadow2);
+    }
+    .quoteGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 860px){ .quoteGrid{ grid-template-columns: 1fr; } }
+    .quoteActions{ margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Kamia 報價計算器（未稅）</h1>
+        <div class="sub">內部用快速報價</div>
+      </div>
+      <button class="btn" id="reset" type="button">重置</button>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label>型號（代號 / 才價）</label>
+          <select id="code"></select>
+        </div>
+
+        <div>
+          <label>數量（可輸入小數；米可直接輸入 cm：例如 249、5001）</label>
+          <input id="qty" type="number" step="0.01" value="5" />
+        </div>
+
+        <div>
+          <label>單位</label>
+          <select id="unit">
+            <option value="m">米</option>
+            <option value="cai">才</option>
+            <option value="chi">呎（四呎寬 122）</option>
+          </select>
+        </div>
+
+        <div id="laborWrap">
+          <label>工錢（元，一筆）</label>
+          <input id="labor" type="number" step="1" placeholder="例如 4000" value="0" />
+        </div>
+
+        <div id="roughLaborPerCaiWrap" class="hide">
+          <label>大概工錢（元 / 才）</label>
+          <input id="roughLaborPerCai" type="number" step="1" value="85" />
+        </div>
+
+        <div>
+          <label>備註</label>
+          <input type="text" value="（不顯示公式與內規）" disabled />
+        </div>
+      </div>
+
+      <div class="modeBar">
+        <div class="toggle">
+          <input id="roughMode" type="checkbox" />
+          <div>
+            <div class="title">使用大概報價</div>
+            <div class="desc">切換模式</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warnBox" id="warnBox">
+        已拆單計算
+        <small id="warnDetail"></small>
+      </div>
+
+      <div class="okBox" id="okBox">
+        已套用最低計價
+        <small id="okDetail"></small>
+      </div>
+
+      <div class="splitCard" id="splitCard">
+        <div class="title">
+          <span>拆單明細</span>
+          <span class="pill" id="splitPill">-</span>
+        </div>
+        <table class="splitTable">
+          <thead>
+            <tr>
+              <th>段落</th>
+              <th>計價長度</th>
+              <th>未稅金額</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>第 1 段</td>
+              <td id="p1len">-</td>
+              <td id="p1price">-</td>
+            </tr>
+            <tr>
+              <td>第 2 段</td>
+              <td id="p2len">-</td>
+              <td id="p2price">-</td>
+            </tr>
+            <tr>
+              <td><b>合計</b></td>
+              <td id="ptotalLen"><b>-</b></td>
+              <td id="ptotalPrice"><b>-</b></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add-ons -->
+      <div class="sectionTitle">
+        <span>自訂費用項（車趟/高空/夜間…）</span>
+        <button class="miniBtn" id="addAddonBtn" type="button">＋ 新增費用</button>
+      </div>
+      <table class="addonTable" id="addonTable">
+        <thead>
+          <tr>
+            <th style="width:24%;">名稱</th>
+            <th style="width:18%;">類型</th>
+            <th style="width:12%;">數量</th>
+            <th style="width:14%;">單價</th>
+            <th style="width:12%;">顯示</th>
+            <th style="width:14%;">小計</th>
+            <th style="width:6%;"></th>
+          </tr>
+        </thead>
+        <tbody id="addonBody"></tbody>
+      </table>
+
+      <!-- Quote sheet panel -->
+      <div class="quotePanel">
+        <div class="sectionTitle" style="margin-top:0;">
+          <span>報價單輸出（A4 / 可存 PDF）</span>
+          <span class="pill">內部工具（不公開）</span>
+        </div>
+
+        <div class="quoteGrid">
+          <div>
+            <label>客戶名稱（可空）</label>
+            <input id="clientName" placeholder="例如：王小姐 / XX設計" />
+          </div>
+          <div>
+            <label>施工地址（可空）</label>
+            <input id="siteAddress" placeholder="例如：台北市大安區..." />
+          </div>
+
+          <div>
+            <label>報價單顯示材料數量</label>
+            <select id="displayQtyMode">
+              <option value="auto_m">客戶版（顯示米：量測值/約）</option>
+              <option value="cai">專業版（顯示才）</option>
+            </select>
+          </div>
+
+          <div class="toggle" style="justify-content:space-between;">
+            <div>
+              <div class="title">施工費拆開顯示</div>
+              <div class="desc">開：材料一列 + 施工一列；關：合併</div>
+            </div>
+            <input id="splitLaborLine" type="checkbox" />
+          </div>
+
+          <div>
+            <label>報價單備註（可空）</label>
+            <input id="quoteNote" placeholder="例如：含施工 / 不含拆除 / 交期..." />
+          </div>
+
+          <div>
+            <label>公司資訊（可空；不填就用預設）</label>
+            <input id="companyInfo" placeholder="例如：岱福國際建材有限公司｜02-xxxxxxx｜統編xxxxx" />
+          </div>
+        </div>
+
+        <div class="quoteActions">
+          <button class="btn primary" id="genQuoteBtn" type="button">一鍵生成報價單（列印/存PDF）</button>
+          <button class="btn" id="saveDraftBtn" type="button">儲存欄位（本機）</button>
+        </div>
+        <div class="foot">
+          ＊客戶版米數：顯示量測值/約（不揭露內規進位）；金額依內部標準計價。
+        </div>
+      </div>
+    </div>
+
+    <div class="resultCard">
+      <div class="kpi">
+        <div class="t">未稅報價（自動算）</div>
+        <div class="v"><span id="quote">-</span><span class="unit">元</span></div>
+        <div class="hint" id="hintText">已依輸入自動計算</div>
+        <div class="hint" id="kpiDetail"></div>
+      </div>
+
+      <div class="oneLine">
+        <div class="t">給客人的一句話（不露內規）</div>
+        <div class="txt" id="oneLine">-</div>
+        <div class="actions">
+          <button class="copy" id="copyBtn" type="button">一鍵複製（貼 LINE）</button>
+          <button class="copy" id="copyQuoteBtn" type="button">複製報價單摘要</button>
+          <div class="toast" id="toast">已複製 ✅</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ✅ 資料庫（停售已拿掉）
+  const DB = [
+    { code:"CS",  label:"素面", cai:30 },
+    { code:"CKS", label:"素面", cai:55 },
+    { code:"CKL", label:"織紋&皮革", cai:55 },
+    { code:"CKF", label:"織紋&皮革", cai:80 },
+    { code:"CPP", label:"石紋", cai:65 },
+    { code:"CNS", label:"石紋", cai:70 },
+    { code:"CPM(石紋)", label:"石紋", cai:80 },
+    { code:"CST", label:"石紋", cai:80 },
+    { code:"CSM", label:"莫蘭迪極霧", cai:65 },
+    { code:"CKA", label:"莫蘭迪極霧", cai:65 },
+    { code:"CKP", label:"木紋", cai:55 },
+    { code:"CKW", label:"木紋", cai:55 },
+    { code:"CW",  label:"木紋", cai:55 },
+    { code:"CPW", label:"木紋", cai:60 },
+    { code:"CPTW",label:"木紋", cai:60 },
+    { code:"CPP(木紋)", label:"木紋", cai:65 },
+    { code:"CSW", label:"木紋", cai:70 },
+    { code:"CVW", label:"木紋", cai:80 },
+    { code:"CKA-166", label:"金屬", cai:55 },
+    { code:"CPM(金屬)", label:"金屬", cai:65 },
+    { code:"CAPZ", label:"金屬", cai:95 },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const num = (v) => {
+    const x = parseFloat(v);
+    return Number.isFinite(x) ? x : 0;
+  };
+  const fmtInt = (x) => Math.round(x).toLocaleString("zh-Hant");
+  const fmtDec = (x, d=2) => (Number.isFinite(x) ? x : 0).toLocaleString("zh-Hant", {
+    maximumFractionDigits:d, minimumFractionDigits:d
+  });
+
+  // 內規常數
+  const M_TO_CAI = 13.32;   // 米->才（公司規則）
+  const LABOR_DIV = 0.70;   // 精準：工錢 / 0.7
+  const MAX_M = 50;         // 拆段門檻
+  const STEP_CM = 50;       // 長度進位單位
+  const CM_PER_M = 100;
+  const CM_PER_CHI = 30.3;  // 1 呎 ≈ 30.3 cm
+
+  // ✅ 你指定：呎（四呎寬 122）= 4 才
+  const CAI_PER_CHI_4FT = 4;
+
+  // ✅ 你指定：才數最低 1 才（只要>0）
+  function min1Cai(caiQty){
+    return (caiQty > 0) ? Math.max(1, caiQty) : 0;
+  }
+
+  function nicePerMeterFromCaiPrice(caiPrice){
+    const raw = caiPrice * M_TO_CAI;
+    return Math.ceil(raw / 10) * 10;
+  }
+
+  function loadCodes(){
+    const sel = $("code");
+    sel.innerHTML = "";
+    DB.forEach((it, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.textContent = `${it.code}｜${it.label}｜${it.cai} 元/才`;
+      sel.appendChild(opt);
+    });
+    sel.value = 0;
+  }
+
+  function setModeUI(){
+    const roughOn = $("roughMode").checked;
+    $("laborWrap").classList.toggle("hide", roughOn);
+    $("roughLaborPerCaiWrap").classList.toggle("hide", !roughOn);
+    $("hintText").textContent = "已依輸入自動計算";
+  }
+
+  function unitText(unit){
+    if (unit === "m") return "米";
+    if (unit === "chi") return "呎";
+    return "才";
+  }
+
+  function ceilToStepCm(cm, stepCm){
+    if (stepCm <= 0) return cm;
+    return Math.ceil(cm / stepCm) * stepCm;
+  }
+
+  function normalizeRawCm(qty, unit){
+    if (unit === "cai") return { rawCm:null, note:"" };
+
+    let rawCm = 0;
+    let note = "";
+
+    if (unit === "m") {
+      // >50 視為 cm
+      if (qty > MAX_M) {
+        rawCm = qty;
+        note = `已將 ${qty} 視為 cm（= ${fmtDec(rawCm/CM_PER_M,2)} m）`;
+      } else {
+        rawCm = qty * CM_PER_M;
+      }
+    } else if (unit === "chi") {
+      rawCm = qty * CM_PER_CHI;
+    }
+
+    return { rawCm, note };
+  }
+
+  function pricedCmFromRawCm(rawCm){
+    return ceilToStepCm(rawCm, STEP_CM);
+  }
+
+  // 米 -> 才（m×13.32）
+  function caiFromPricedCm(pricedCm){
+    const pricedM = pricedCm / CM_PER_M;
+    return pricedM * M_TO_CAI;
+  }
+
+  // ✅ 呎（四呎寬）-> 才（呎×4），但仍照長度進位後的「計價呎」去算
+  function caiFromPricedCmChi4ft(pricedCm){
+    const pricedChi = pricedCm / CM_PER_CHI;
+    return pricedChi * CAI_PER_CHI_4FT;
+  }
+
+  function splitRawCmToTwoParts(rawCm){
+    const rawM = rawCm / CM_PER_M;
+    const p1RawM = Math.min(MAX_M, rawM);
+    const p2RawM = Math.max(0, rawM - MAX_M);
+
+    const p1RawCm = p1RawM * CM_PER_M;
+    const p2RawCm = p2RawM * CM_PER_M;
+
+    const p1PricedCm = pricedCmFromRawCm(p1RawCm);
+    const p2PricedCm = pricedCmFromRawCm(p2RawCm);
+
+    return { p1RawCm, p2RawCm, p1PricedCm, p2PricedCm };
+  }
+
+  // ✅ 核心：材料/工拆開算，避免拆段工錢重複
+  function calcMaterialFee(caiQty, caiPrice){
+    return caiQty * caiPrice;
+  }
+
+  // Add-ons
+  const ADDON_TYPES = [
+    { v:"fixed",  t:"固定金額" },
+    { v:"mul",    t:"數量×單價" },
+    { v:"cai",    t:"跟才數連動" },
+    { v:"pct",    t:"% 加成/折扣" },
+  ];
+
+  function defaultAddon(){
+    return { name:"車趟費", type:"fixed", qty:1, price:2000, show:true };
+  }
+
+  function loadAddons(){
+    try{
+      const raw = localStorage.getItem("kamia_addons");
+      if(!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){
+      return [];
+    }
+  }
+  function saveAddons(addons){
+    localStorage.setItem("kamia_addons", JSON.stringify(addons));
+  }
+
+  let addons = loadAddons();
+
+  function renderAddons(caiQtyForPreview=0, baseForPct=0){
+    const body = $("addonBody");
+    body.innerHTML = "";
+
+    addons.forEach((a, idx)=>{
+      const tr = document.createElement("tr");
+
+      const typeOpts = ADDON_TYPES.map(o=> `<option value="${o.v}" ${o.v===a.type?'selected':''}>${o.t}</option>`).join("");
+
+      let sub = 0;
+      if (a.type === "fixed") sub = num(a.price);
+      else if (a.type === "mul") sub = num(a.qty) * num(a.price);
+      else if (a.type === "cai") sub = caiQtyForPreview * num(a.price);
+      else if (a.type === "pct") sub = baseForPct * (num(a.price)/100);
+
+      tr.innerHTML = `
+        <td><input data-k="name" data-i="${idx}" value="${a.name || ""}" /></td>
+        <td>
+          <select data-k="type" data-i="${idx}">
+            ${typeOpts}
+          </select>
+        </td>
+        <td><input data-k="qty" data-i="${idx}" type="number" step="0.01" value="${a.qty ?? 1}" /></td>
+        <td><input data-k="price" data-i="${idx}" type="number" step="0.01" value="${a.price ?? 0}" /></td>
+        <td class="center">
+          <label style="display:flex; align-items:center; gap:8px; margin:0;">
+            <input data-k="show" data-i="${idx}" type="checkbox" ${a.show?'checked':''} style="width:20px;height:20px;accent-color:#4f46e5;" />
+            <span style="font-weight:1000; color:#334155;">顯示</span>
+          </label>
+        </td>
+        <td style="font-weight:1000;">${fmtInt(sub)} 元</td>
+        <td class="right"><button class="addonRowBtn" data-del="${idx}" type="button">刪</button></td>
+      `;
+
+      body.appendChild(tr);
+    });
+
+    body.querySelectorAll("input,select").forEach(el=>{
+      el.addEventListener("input", onAddonEdit);
+      el.addEventListener("change", onAddonEdit);
+    });
+    body.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = parseInt(btn.getAttribute("data-del"),10);
+        addons.splice(i,1);
+        saveAddons(addons);
+        calc();
+      });
+    });
+  }
+
+  function onAddonEdit(e){
+    const el = e.target;
+    const k = el.getAttribute("data-k");
+    const i = parseInt(el.getAttribute("data-i"),10);
+    if(!k || !Number.isFinite(i)) return;
+
+    if(k==="show"){
+      addons[i][k] = el.checked;
+    }else if(k==="qty" || k==="price"){
+      addons[i][k] = num(el.value);
+    }else{
+      addons[i][k] = el.value;
+      if(k==="type"){
+        if(el.value==="pct"){
+          addons[i].qty = 1;
+          if(!addons[i].price) addons[i].price = 5;
+        }
+      }
+    }
+    saveAddons(addons);
+    calc();
+  }
+
+  function addonsAmount(caiQty, baseAmount){
+    let total = 0;
+    let shown = [];
+    let hiddenSum = 0;
+
+    addons.forEach(a=>{
+      let amt = 0;
+      if (a.type === "fixed") amt = num(a.price);
+      else if (a.type === "mul") amt = num(a.qty) * num(a.price);
+      else if (a.type === "cai") amt = caiQty * num(a.price);
+      else if (a.type === "pct") amt = baseAmount * (num(a.price)/100);
+
+      total += amt;
+
+      if(a.show){
+        shown.push({ name:a.name || "費用", amt, type:a.type, qty:a.qty, price:a.price });
+      }else{
+        hiddenSum += amt;
+      }
+    });
+
+    return { total, shown, hiddenSum };
+  }
+
+  function showSplitUI(show){
+    $("splitCard").style.display = show ? "block" : "none";
+    $("warnBox").style.display = show ? "block" : "none";
+  }
+
+  function showProtectUI(show, detail){
+    $("okBox").style.display = show ? "block" : "none";
+    $("okDetail").textContent = detail || "";
+  }
+
+  let __state = {
+    item:null,
+    unit:"m",
+    qtyInput:0,
+    rawCm:0,
+    rawM:0,
+    caiQtyTotal:0,
+    baseTotal:0,
+    addonsTotal:0,
+    quoteTotal:0,
+    measuredDisplayText:"",
+    note:"",
+    roughOn:false,
+    core:null,
+    addonsShown:[],
+    addonsHiddenSum:0
+  };
+
+  function calc(){
+    const item = DB[parseInt($("code").value,10)] || DB[0];
+    const qtyInput = num($("qty").value);
+    const unit = $("unit").value; // m | cai | chi
+    const roughOn = $("roughMode").checked;
+    const roughLaborPerCai = num($("roughLaborPerCai").value) || 85;
+    const laborOneTime = num($("labor").value);
+
+    showProtectUI(false,"");
+    $("warnDetail").textContent = "";
+
+    // ========== 直接輸入「才」 ==========
+    if (unit === "cai"){
+      showSplitUI(false);
+
+      let caiQty = min1Cai(qtyInput); // ✅最低1才
+      const materialFee = calcMaterialFee(caiQty, item.cai);
+
+      let base = 0;
+      let laborSell = 0;
+
+      if (roughOn){
+        laborSell = caiQty * roughLaborPerCai;
+        base = materialFee + laborSell;
+      }else{
+        laborSell = laborOneTime / LABOR_DIV;
+        base = materialFee + laborSell;
+      }
+
+      const add = addonsAmount(caiQty, base);
+      const quote = base + add.total;
+
+      $("quote").textContent = fmtInt(quote);
+      $("oneLine").textContent = `型號 ${item.code}，未稅報價 ${fmtInt(quote)} 元。`;
+      $("kpiDetail").textContent =
+        `才數：${fmtInt(caiQty)}｜材料：${fmtInt(materialFee)}｜施工：${fmtInt(laborSell)}｜加項：${fmtInt(add.total)}｜漂亮米單價：${fmtInt(nicePerMeterFromCaiPrice(item.cai))} 元/m`;
+
+      renderAddons(caiQty, base);
+
+      __state = {
+        item, unit, qtyInput,
+        rawCm:0, rawM:0,
+        caiQtyTotal:caiQty,
+        baseTotal:base,
+        addonsTotal:add.total,
+        quoteTotal:quote,
+        measuredDisplayText:`${fmtDec(qtyInput,2)} 才`,
+        note:"",
+        roughOn,
+        core:{ materialFee, laborSell, totalBase:base },
+        addonsShown:add.shown,
+        addonsHiddenSum:add.hiddenSum
+      };
+      return;
+    }
+
+    // ========== 米 / 呎 ==========
+    const { rawCm, note } = normalizeRawCm(qtyInput, unit);
+    const rawM = rawCm / CM_PER_M;
+    const needSplit = rawM > MAX_M;
+
+    const measuredText = (unit === "m")
+      ? `約 ${fmtDec(rawM,2)} 米`
+      : `約 ${fmtDec(qtyInput,2)} 呎`;
+
+    // 不拆
+    if (!needSplit){
+      showSplitUI(false);
+
+      const pricedCm = pricedCmFromRawCm(rawCm);
+
+      // ✅ 才數換算：米走 13.32；呎走 4 才/呎（四呎寬）
+      let caiQty = (unit === "chi")
+        ? caiFromPricedCmChi4ft(pricedCm)
+        : caiFromPricedCm(pricedCm);
+
+      caiQty = Math.floor(caiQty);
+      const before = caiQty;
+      caiQty = min1Cai(caiQty); // ✅最低1才（全域）
+      if (caiQty !== before){
+        showProtectUI(true, `已補到 ${caiQty} 才`);
+      }
+
+      const materialFee = calcMaterialFee(caiQty, item.cai);
+
+      let base = 0;
+      let laborSell = 0;
+
+      if (roughOn){
+        laborSell = caiQty * roughLaborPerCai;
+        base = materialFee + laborSell;
+      }else{
+        laborSell = laborOneTime / LABOR_DIV;
+        base = materialFee + laborSell;
+      }
+
+      const add = addonsAmount(caiQty, base);
+      const quote = base + add.total;
+
+      $("quote").textContent = fmtInt(quote);
+      $("oneLine").textContent = `型號 ${item.code}（量測 ${measuredText}），未稅報價 ${fmtInt(quote)} 元。`;
+      $("kpiDetail").textContent =
+        `才數：${fmtInt(caiQty)}｜材料：${fmtInt(materialFee)}｜施工：${fmtInt(laborSell)}｜加項：${fmtInt(add.total)}｜漂亮米單價：${fmtInt(nicePerMeterFromCaiPrice(item.cai))} 元/m`;
+
+      renderAddons(caiQty, base);
+
+      __state = {
+        item, unit, qtyInput,
+        rawCm, rawM,
+        caiQtyTotal:caiQty,
+        baseTotal:base,
+        addonsTotal:add.total,
+        quoteTotal:quote,
+        measuredDisplayText: measuredText,
+        note,
+        roughOn,
+        core:{ materialFee, laborSell, totalBase:base },
+        addonsShown:add.shown,
+        addonsHiddenSum:add.hiddenSum
+      };
+      return;
+    }
+
+    // 拆兩段（>50m）
+    showSplitUI(true);
+    $("warnDetail").textContent = note ? `提示：${note}` : "";
+    $("splitPill").textContent = "已拆 2 段";
+
+    const split = splitRawCmToTwoParts(rawCm);
+
+    function partCaiQty(partPricedCm){
+      let q = (unit === "chi")
+        ? caiFromPricedCmChi4ft(partPricedCm)
+        : caiFromPricedCm(partPricedCm);
+      q = Math.floor(q);
+      return min1Cai(q); // ✅最低1才（統一）
+    }
+
+    const p1PricedM = split.p1PricedCm / CM_PER_M;
+    const p2PricedM = split.p2PricedCm / CM_PER_M;
+
+    const p1Cai = partCaiQty(split.p1PricedCm);
+    const p2Cai = partCaiQty(split.p2PricedCm);
+
+    const p1Material = calcMaterialFee(p1Cai, item.cai);
+    const p2Material = calcMaterialFee(p2Cai, item.cai);
+
+    const totalCai = p1Cai + p2Cai;
+    const materialSum = p1Material + p2Material;
+
+    let laborSell = 0;
+    let base = 0;
+
+    if (roughOn){
+      // rough：按才數算（拆不拆都一樣）
+      laborSell = totalCai * roughLaborPerCai;
+      base = materialSum + laborSell;
+
+      // split table：各段顯示材料+該段粗估工（可直覺）
+      const p1 = p1Material + (p1Cai * roughLaborPerCai);
+      const p2 = p2Material + (p2Cai * roughLaborPerCai);
+      $("p1price").textContent = `${fmtInt(p1)} 元`;
+      $("p2price").textContent = `${fmtInt(p2)} 元`;
+    }else{
+      // ✅ 精準：工錢只算一次（整單一次）
+      laborSell = laborOneTime / LABOR_DIV;
+      base = materialSum + laborSell;
+
+      // split table：各段只顯示材料，避免工錢重複
+      $("p1price").textContent = `${fmtInt(p1Material)} 元`;
+      $("p2price").textContent = `${fmtInt(p2Material)} 元`;
+    }
+
+    const add = addonsAmount(totalCai, base);
+    const quote = base + add.total;
+
+    const p1LenText = (unit==="m")
+      ? `${fmtDec(p1PricedM,2)} 米`
+      : `${fmtDec((split.p1PricedCm)/CM_PER_CHI,2)} 呎`;
+    const p2LenText = (unit==="m")
+      ? `${fmtDec(p2PricedM,2)} 米`
+      : `${fmtDec((split.p2PricedCm)/CM_PER_CHI,2)} 呎`;
+
+    $("p1len").textContent = p1LenText;
+    $("p2len").textContent = p2LenText;
+    $("ptotalLen").textContent = (unit==="m")
+      ? `${fmtDec(p1PricedM + p2PricedM,2)} 米`
+      : `${fmtDec(((split.p1PricedCm + split.p2PricedCm)/CM_PER_CHI),2)} 呎`;
+
+    $("ptotalPrice").textContent = `${fmtInt(quote)} 元`;
+    $("quote").textContent = fmtInt(quote);
+    $("oneLine").textContent = `型號 ${item.code}（量測 ${measuredText}），未稅報價 ${fmtInt(quote)} 元。`;
+    $("kpiDetail").textContent =
+      `才數：${fmtInt(totalCai)}｜材料：${fmtInt(materialSum)}｜施工：${fmtInt(laborSell)}｜加項：${fmtInt(add.total)}｜漂亮米單價：${fmtInt(nicePerMeterFromCaiPrice(item.cai))} 元/m`;
+
+    renderAddons(totalCai, base);
+
+    __state = {
+      item, unit, qtyInput,
+      rawCm, rawM,
+      caiQtyTotal:totalCai,
+      baseTotal:base,
+      addonsTotal:add.total,
+      quoteTotal:quote,
+      measuredDisplayText: measuredText,
+      note,
+      roughOn,
+      core:{ materialFee:materialSum, laborSell, totalBase:base },
+      addonsShown:add.shown,
+      addonsHiddenSum:add.hiddenSum
+    };
+  }
+
+  function todayStr(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}/${m}/${day}`;
+  }
+  function genQuoteNo(){
+    return `KAM-${Date.now().toString().slice(-6)}`;
+  }
+
+  function generateQuoteSheet(){
+    const s = __state;
+    if(!s.item){
+      alert("尚未產生報價結果，請先輸入。");
+      return;
+    }
+
+    const client = ($("clientName").value || "").trim();
+    const site = ($("siteAddress").value || "").trim();
+    const note = ($("quoteNote").value || "").trim();
+    const companyInfo = ($("companyInfo").value || "").trim() || "（請填公司資訊）";
+    const displayMode = $("displayQtyMode").value; // auto_m | cai
+    const splitLabor = $("splitLaborLine").checked;
+
+    const dateStr = todayStr();
+    const qno = genQuoteNo();
+
+    let dispQtyText = "";
+    let unitPriceText = "";
+    const lineName = `${s.item.code}｜${s.item.label}`;
+    const lineSpec = "建築膜 / 表面材";
+
+    const nicePerM = nicePerMeterFromCaiPrice(s.item.cai);
+    const baseTotal = s.baseTotal;
+    const addonsTotal = s.addonsTotal;
+
+    const shown = s.addonsShown || [];
+    const hiddenSum = s.addonsHiddenSum || 0;
+
+    if(displayMode === "auto_m"){
+      dispQtyText = (s.unit === "m" || s.unit === "chi") ? (s.measuredDisplayText || "—").replace("約 ","") : "—";
+      unitPriceText = `${fmtInt(nicePerM)} 元/米`;
+    }else{
+      dispQtyText = `${fmtInt(s.caiQtyTotal)} 才`;
+      unitPriceText = `${fmtInt(s.item.cai)} 元/才`;
+    }
+
+    let rowsHtml = "";
+    let idx = 1;
+
+    function trRow({name,spec,qty,unit,unitPrice,amt}){
+      return `
+        <tr>
+          <td class="center">${idx++}</td>
+          <td>${name}</td>
+          <td>${spec || ""}</td>
+          <td class="right">${qty || ""}</td>
+          <td class="center">${unit || ""}</td>
+          <td class="right">${unitPrice || ""}</td>
+          <td class="right">${fmtInt(amt || 0)}</td>
+        </tr>
+      `;
+    }
+
+    if(splitLabor){
+      const materialFee = s.core?.materialFee ?? baseTotal;
+      const laborSell = s.core?.laborSell ?? 0;
+
+      rowsHtml += trRow({
+        name:`材料｜${lineName}`,
+        spec: lineSpec,
+        qty: displayMode==="auto_m" ? `約 ${dispQtyText}` : `${fmtInt(s.caiQtyTotal)}`,
+        unit: displayMode==="auto_m" ? "米" : "才",
+        unitPrice: displayMode==="auto_m" ? `${fmtInt(nicePerM)}` : `${fmtInt(s.item.cai)}`,
+        amt: materialFee
+      });
+
+      rowsHtml += trRow({
+        name:`施工｜現場施作`,
+        spec: "包膜/施工",
+        qty: "1",
+        unit: "式",
+        unitPrice: "",
+        amt: laborSell
+      });
+    }else{
+      rowsHtml += trRow({
+        name:`連工帶料｜${lineName}`,
+        spec: lineSpec,
+        qty: displayMode==="auto_m" ? `約 ${dispQtyText}` : `${fmtInt(s.caiQtyTotal)}`,
+        unit: displayMode==="auto_m" ? "米" : "才",
+        unitPrice: displayMode==="auto_m" ? `${fmtInt(nicePerM)}` : `${fmtInt(s.item.cai)}`,
+        amt: baseTotal
+      });
+    }
+
+    shown.forEach(a=>{
+      rowsHtml += trRow({
+        name:`加項｜${a.name}`,
+        spec: a.type==="pct" ? `${a.price}%` : "",
+        qty: a.type==="mul" ? `${a.qty}` : (a.type==="fixed" ? "1" : (a.type==="cai" ? `${fmtInt(s.caiQtyTotal)}` : "")),
+        unit: a.type==="mul" ? "單位" : (a.type==="fixed" ? "式" : (a.type==="cai" ? "才" : "%")),
+        unitPrice: a.type==="mul" ? `${fmtInt(a.price)}` : (a.type==="fixed" ? `${fmtInt(a.price)}` : (a.type==="cai" ? `${fmtInt(a.price)}` : "")),
+        amt: a.amt
+      });
+    });
+
+    if(hiddenSum > 0){
+      rowsHtml += trRow({
+        name:`其他費用（彙總）`,
+        spec: "",
+        qty: "1",
+        unit: "式",
+        unitPrice: "",
+        amt: hiddenSum
+      });
+    }
+
+    const total = baseTotal + addonsTotal;
+
+    const html = `
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>報價單</title>
+<style>
+  @page{ size:A4; margin:10mm; }
+  body{ font-family:"PingFang TC","Microsoft JhengHei",system-ui,sans-serif; color:#000; }
+  .sheet{ border:2px solid #000; padding:10px; }
+  .title{ text-align:center; font-size:26px; font-weight:800; margin:6px 0 2px; }
+  .subtitle{ text-align:center; font-size:22px; font-weight:800; margin:0 0 10px; }
+  table{ width:100%; border-collapse:collapse; table-layout:fixed; }
+  td,th{ border:1px solid #000; padding:6px; font-size:13px; vertical-align:middle; }
+  .small td{ font-size:12px; }
+  .center{ text-align:center; }
+  .right{ text-align:right; }
+  .bold{ font-weight:800; }
+  .note{ font-size:12px; line-height:1.6; }
+  .sum td{ font-size:16px; font-weight:800; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="title">${companyInfo.split("｜")[0] || "報價單"}</div>
+  <div class="subtitle">報價單</div>
+
+  <table class="small">
+    <tr>
+      <td colspan="3">${companyInfo}</td>
+      <td colspan="2">日期：${dateStr}</td>
+    </tr>
+    <tr>
+      <td colspan="3">客戶名稱：${client || "—"}</td>
+      <td colspan="2">報價單號：${qno}</td>
+    </tr>
+    <tr>
+      <td colspan="3">施工地址：${site || "—"}</td>
+      <td colspan="2">材料：${s.item.code}（${s.item.label}）</td>
+    </tr>
+    <tr>
+      <td colspan="5" class="note">
+        ${note ? `備註：${note}` : ""}
+      </td>
+    </tr>
+  </table>
+
+  <table style="margin-top:8px;">
+    <colgroup>
+      <col style="width:7%">
+      <col style="width:23%">
+      <col style="width:28%">
+      <col style="width:12%">
+      <col style="width:8%">
+      <col style="width:12%">
+      <col style="width:10%">
+    </colgroup>
+    <tr class="center bold">
+      <th>項次</th><th>品名</th><th>規格</th><th>數量</th><th>單位</th><th>單價</th><th>複價</th>
+    </tr>
+    ${rowsHtml}
+  </table>
+
+  <table style="margin-top:8px;">
+    <tr class="sum">
+      <td style="width:70%" class="note">
+        * 報價有效期限：10 個工作天
+      </td>
+      <td class="center">未稅合計</td>
+      <td class="right">${fmtInt(total)}</td>
+    </tr>
+  </table>
+
+  <script>window.onload=()=>window.print();<\/script>
+</div>
+</body>
+</html>
+`;
+
+    const w = window.open("", "_blank");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
+  function loadDraft(){
+    try{
+      const raw = localStorage.getItem("kamia_draft");
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      $("clientName").value = d.clientName || "";
+      $("siteAddress").value = d.siteAddress || "";
+      $("quoteNote").value = d.quoteNote || "";
+      $("companyInfo").value = d.companyInfo || "";
+      $("displayQtyMode").value = d.displayQtyMode || "auto_m";
+      $("splitLaborLine").checked = !!d.splitLaborLine;
+    }catch(e){}
+  }
+  function saveDraft(){
+    const d = {
+      clientName: $("clientName").value || "",
+      siteAddress: $("siteAddress").value || "",
+      quoteNote: $("quoteNote").value || "",
+      companyInfo: $("companyInfo").value || "",
+      displayQtyMode: $("displayQtyMode").value || "auto_m",
+      splitLaborLine: $("splitLaborLine").checked
+    };
+    localStorage.setItem("kamia_draft", JSON.stringify(d));
+  }
+
+  function bind(){
+    ["code","qty","unit","labor","roughLaborPerCai"].forEach(id=>{
+      $(id).addEventListener("input", ()=>{ setModeUI(); calc(); });
+      $(id).addEventListener("change", ()=>{ setModeUI(); calc(); });
+    });
+
+    $("roughMode").addEventListener("change", ()=>{
+      setModeUI();
+      calc();
+    });
+
+    $("reset").addEventListener("click", ()=>{
+      $("code").value = 0;
+      $("qty").value = 5;
+      $("unit").value = "m";
+      $("labor").value = 0;
+      $("roughMode").checked = false;
+      $("roughLaborPerCai").value = 85;
+      setModeUI();
+      showSplitUI(false);
+      showProtectUI(false,"");
+      calc();
+    });
+
+    $("copyBtn").addEventListener("click", async ()=>{
+      const text = $("oneLine").textContent;
+      await copyText(text);
+    });
+
+    $("copyQuoteBtn").addEventListener("click", async ()=>{
+      const s = __state;
+      const txt = `【報價摘要】\n型號：${s.item?.code || "-"}（${s.item?.label || "-"}）\n量測：${s.measuredDisplayText || "-"}\n未稅：${fmtInt(s.quoteTotal || 0)} 元`;
+      await copyText(txt);
+    });
+
+    $("addAddonBtn").addEventListener("click", ()=>{
+      addons.push(defaultAddon());
+      saveAddons(addons);
+      calc();
+    });
+
+    $("genQuoteBtn").addEventListener("click", ()=>{
+      saveDraft();
+      generateQuoteSheet();
+    });
+
+    $("saveDraftBtn").addEventListener("click", ()=>{
+      saveDraft();
+      alert("已儲存 ✅（只存在你電腦本機）");
+    });
+
+    ["clientName","siteAddress","quoteNote","companyInfo","displayQtyMode","splitLaborLine"].forEach(id=>{
+      $(id).addEventListener("input", saveDraft);
+      $(id).addEventListener("change", saveDraft);
+    });
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    $("toast").style.display = "block";
+    setTimeout(()=> $("toast").style.display = "none", 1200);
+  }
+
+  loadCodes();
+  loadDraft();
+  bind();
+  setModeUI();
+  calc();
+</script>
+</body>
+</html>
